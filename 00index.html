@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>김포시 아파트 관리 챌린지 [Ranking Pro Plus]</title>
+    <style>
+        :root { 
+            --gimpo-blue: #005bac; --gimpo-gold: #ffcc00; --danger: #e74c3c; --success: #2dce89; 
+            --sky: #81d4fa; --canal: #4fc3f7; --night-blue: #001a33;
+        }
+        
+        * { box-sizing: border-box; }
+        body { font-family: 'Pretendard', sans-serif; margin: 0; padding: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: var(--sky); transition: 2s; }
+        body.night-mode { background: var(--night-blue); }
+
+        /* 🏙️ 김포 라베니체 금빛수로 배경 */
+        #laveniche-bg { position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+        .canal { position: absolute; bottom: 0; width: 100%; height: 15vh; background: linear-gradient(to bottom, #29b6f6, #0288d1); opacity: 0.8; }
+        .terrace-shops { position: absolute; bottom: 15vh; width: 100%; height: 12vh; display: flex; justify-content: space-around; align-items: flex-end; width: 120%; left: -10%; }
+        .shop { width: 50px; height: 70px; background: #ffcc80; border: 2px solid #ef6c00; }
+        .bridge { position: absolute; bottom: 14vh; width: 200px; height: 50px; background: #cfd8dc; border-radius: 100px 100px 0 0; left: 50%; transform: translateX(-50%); border: 4px solid #90a4ae; z-index: 2; }
+
+        /* 📦 게임 메인 박스 */
+        #game-box { 
+            background: rgba(255, 255, 255, 0.96); width: 95%; max-width: 600px; padding: 25px; 
+            border-radius: 40px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); border: 6px solid var(--gimpo-gold); 
+            text-align: center; position: relative; backdrop-filter: blur(10px);
+        }
+        .hidden { display: none !important; }
+
+        /* 🏠 3D 아파트 시각 효과 */
+        #apt-visual-container { width: 100%; height: 260px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 10px; perspective: 1500px; }
+        #apt-building { width: 180px; height: 240px; position: relative; transform-style: preserve-3d; transform: rotateY(-25deg) rotateX(10deg); transition: 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); filter: drop-shadow(10px 20px 30px rgba(0,0,0,0.3)); }
+        .face { position: absolute; box-sizing: border-box; border: 1px solid rgba(0,0,0,0.2); }
+        .front { width: 180px; height: 240px; background: linear-gradient(135deg, #b0bec5 0%, #78909c 100%); display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(5, 1fr); gap: 6px; padding: 12px; transform: translateZ(40px); }
+        .side { width: 80px; height: 240px; background: linear-gradient(to right, #546e7a, #37474f); transform: rotateY(90deg) translateZ(140px); }
+        .top { width: 180px; height: 80px; background: #cfd8dc; transform: rotateX(90deg) translateZ(40px); border: 4px solid #90a4ae; }
+
+        .window { background: linear-gradient(135deg, #263238 0%, #102027 100%); border: 1.5px solid #455a64; border-radius: 2px; display: flex; justify-content: center; align-items: center; overflow: hidden; width: 100%; height: 100%; transition: 0.5s; position: relative; }
+        .neon-on { background: radial-gradient(circle, #fff9c4 20%, #fff01f 100%) !important; box-shadow: 0 0 15px #fff01f; border-color: #fffde7; }
+        .resident { font-size: 24px; animation: personPop 0.5s forwards; }
+        @keyframes personPop { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1.1); opacity: 1; } }
+
+        /* 🚨 오답 오버레이 */
+        .overlay { position: absolute; top: -5px; left: -5px; width: calc(100% + 10px); height: calc(100% + 10px); background: rgba(0, 0, 0, 0.98); z-index: 3000; border-radius: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; padding: 25px; }
+        #fine-text { color: #ff3e3e; font-size: 28px; font-weight: 900; animation: shake 0.1s infinite; margin-bottom: 15px; }
+        @keyframes shake { 0% { transform: translate(2px, 2px); } 50% { transform: translate(-2px, -3px); } }
+
+        .law-guide-box { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); padding: 15px; border-radius: 15px; width: 100%; text-align: left; margin-bottom: 15px; }
+        .law-guide-box b { color: var(--gimpo-gold); display: block; margin-bottom: 5px; font-size: 16px; }
+
+        .choice-btn { padding: 15px; border: 3px solid #eee; border-radius: 15px; background: #fff; cursor: pointer; font-size: 16px; font-weight: 800; transition: 0.2s; margin-bottom: 8px; width: 100%; color: #333; }
+        .choice-btn:hover { border-color: var(--gimpo-blue); background: #f0f7ff; }
+        .action-btn { padding: 18px; border: none; border-radius: 20px; font-weight: 900; color: #fff; font-size: 19px; width: 100%; cursor: pointer; box-shadow: 0 5px 0 rgba(0,0,0,0.1); margin-top: 10px; }
+        
+        #certificate { background: #fff; border: 10px double var(--gimpo-gold); padding: 25px; color: #222; margin-top: 20px; }
+        .mascot { width: 80px; animation: bounce 0.6s infinite alternate; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
+    </style>
+</head>
+<body>
+
+<audio id="audio-cheer" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"></audio>
+<audio id="audio-boo" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3"></audio>
+
+<div id="laveniche-bg">
+    <div class="bridge"></div>
+    <div class="terrace-shops"><script>for(let i=0; i<10; i++) document.write('<div class="shop"></div>');</script></div>
+    <div class="canal"></div>
+</div>
+
+<div id="game-box">
+    <div id="view-1">
+        <div style="background: var(--gimpo-gold); color: #333; font-weight: 900; padding: 6px 20px; border-radius: 50px; display: inline-block; margin-bottom: 10px; font-size: 12px;">전국최초! 공동주택 관리 게이미피케이션</div>
+        <h1 style="color: var(--gimpo-blue); font-size: 22px; margin: 10px 0;">김포시 아파트! 관리! 챌린지<br><span style="color:#ff5722">라베니체 금빛수로 프로젝트 🏠</span></h1>
+        <div style="margin: 15px 0;">
+            <img src="posu.png" class="mascot" onerror="this.src='https://via.placeholder.com/80?text=POSU'">
+            <img src="pomi.png" class="mascot" style="animation-delay: 0.3s;" onerror="this.src='https://via.placeholder.com/80?text=POMI'">
+        </div>
+        <p style="font-weight: 800; font-size: 17px; color: #444;">금빛수로 위에서 펼쳐지는 실무 챌린지!<br>전국 최초의 아파트 밸런스 게임에 참여하세요!</p>
+        <button class="action-btn" style="background: var(--gimpo-blue);" onclick="startFlow()">도전 시작하기! ➔</button>
+    </div>
+
+    <div id="view-2" class="hidden">
+        <h2 style="color: var(--gimpo-blue); font-size: 20px;">🏘️ 참여 지역을 선택하세요</h2>
+        <select id="select-region" style="width: 100%; padding: 18px; border-radius: 12px; border: 2px solid #ddd; font-weight: 700; font-size: 18px; margin-bottom: 20px;">
+            <option value="">-- 우리 동네 선택하기 --</option>
+            <option value="사우동">1. 사우동</option><option value="장기동">2. 장기동</option>
+            <option value="북변동">3. 북변동</option><option value="감정동">4. 감정동</option>
+            <option value="구래동">5. 구래동</option><option value="마산동">6. 마산동</option>
+            <option value="운양동">7. 운양동</option><option value="풍무동">8. 풍무동</option>
+            <option value="양촌읍">9. 양촌읍</option><option value="고촌읍">10. 고촌읍</option>
+            <option value="통진읍">11. 통진읍</option>
+        </select>
+        <button class="action-btn" style="background: var(--success);" onclick="checkAndStart()">진짜 시작! ➔</button>
+    </div>
+
+    <div id="view-game" class="hidden">
+        <div id="apt-visual-container">
+            <div id="apt-building">
+                <div class="face top"></div><div class="face side"></div>
+                <div class="face front" id="apt-front">
+                    <script>for(let i=0; i<20; i++) document.write('<div class="window" id="win-'+i+'"></div>');</script>
+                </div>
+            </div>
+        </div>
+
+        <div id="sudden-event-screen" class="hidden overlay" style="background: linear-gradient(135deg, #ff5722 0%, #3e2723 100%);">
+            <h1 id="sudden-title" style="font-size: 28px;">⚠️ 돌발 상황!</h1>
+            <p id="sudden-desc" style="padding: 0 30px; font-size: 17px;"></p>
+            <button class="choice-btn" id="sudden-btn-1" onclick="handleSudden('a')"></button>
+            <button class="choice-btn" id="sudden-btn-2" onclick="handleSudden('b')"></button>
+        </div>
+
+        <div id="area-question">
+            <div style="font-weight: 900; color: var(--gimpo-blue); margin-bottom: 5px; font-size: 13px;">STAGE <span id="current-idx">1</span> / 20</div>
+            <div id="txt-question" style="min-height: 70px; font-size: 18px; font-weight: 800; line-height: 1.4; margin-bottom: 15px;"></div>
+            <div class="btn-list">
+                <button class="choice-btn" id="btn-a" onclick="checkAnswer('a')"></button>
+                <button class="choice-btn" id="btn-b" onclick="checkAnswer('b')"></button>
+            </div>
+        </div>
+
+        <div id="area-feedback" class="hidden">
+            <div id="wrong-screen" class="hidden overlay">
+                <div id="fine-text">🚨 과태료 발생 주의 🚨</div>
+                <div class="law-guide-box">
+                    <b id="guide-correct-ans"></b>
+                    <span id="guide-legal-ref" style="font-size: 14px; color: #ddd; line-height: 1.5;"></span>
+                </div>
+                <button class="action-btn" style="background: var(--danger); width: 80%;" onclick="directNext()">내용 숙지 완료 ➔</button>
+            </div>
+            <div id="correct-feedback-box">
+                <div id="card-feedback" style="padding: 15px; border-radius: 15px; background: #f8fbff; border: 2px solid #e1e4e8; margin-top: 10px; font-size: 14px; text-align: left; color: #333;"></div>
+                <button class="action-btn" style="background: #333;" onclick="directNext()">다음 문제로 ➔</button>
+            </div>
+        </div>
+    </div>
+
+     <div id="view-result" class="hidden">
+        <h1 style="font-size: 22px; color: var(--gimpo-blue);">챌린지 종료!</h1>
+        <p style="margin: 0; font-weight: 800; color: #666;">귀하의 최종 실무 점수는?</p>
+        <div style="font-size: 65px; font-weight: 900; color: var(--gimpo-blue); margin: 5px 0;"><span id="txt-score">0</span></div>
+        
+        <div style="background: #fff; padding: 15px; border-radius: 20px; border: 3px solid #eee; text-align: left; margin-bottom: 15px;">
+            <p style="font-weight: 900; color: var(--gimpo-blue); border-bottom: 2px solid var(--gimpo-gold); padding-bottom: 5px; font-size: 15px; margin-bottom: 10px;">🏆 김포시 실시간 지역 랭킹</p>
+            <div id="leaderboard" style="line-height: 2; font-size: 14px; color: #444;"></div>
+        </div>
+
+        <button class="action-btn" style="background: var(--gimpo-gold); color: #333;" onclick="goPage('cert')">🏆 마스터 인증서 확인하기</button>
+        <button class="action-btn" style="background: #eee; color: #666; font-size: 14px; padding: 10px;" onclick="location.reload()">도전 다시하기</button>
+    </div>
+
+    <div id="view-cert" class="hidden">
+        <div id="view-certificate-area">
+            <p style="font-weight: 800; color: #af8f2c; font-size: 14px; margin: 0; text-decoration: underline;">CERTIFICATE OF MASTER</p>
+            <h2 style="font-size: 28px; margin: 15px 0; color: #222;">투명관리 마스터 인증서</h2>
+            
+            <div style="margin: 25px 0; text-align: left; padding: 0 10px;">
+                <p style="font-size: 16px; line-height: 1.8; color: #444;">
+                    성 명: <b>김포시 아파트 리더</b><br>
+                    지 역: <b><span id="final-region"></span></b><br>
+                    지 수: <b><span id="final-score"></span>점</b>
+                </p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                <p style="font-size: 14px; line-height: 1.6; color: #555; text-align: center;">
+                    귀하는 김포시 아파트 관리 챌린지 20문항을 성실히 완수하였으며, 
+                    투명하고 공정한 공동체 문화를 조성하는 데 기여할 수 있는 
+                    우수한 실무 역량을 갖추었음을 인증합니다.
+                </p>
+            </div>
+
+            <div style="margin-top: 40px;">
+                <p style="font-size: 18px; font-weight: 900; color: #333; letter-spacing: 4px;">김 포 시</p>
+                <p style="font-size: 11px; color: #999;"><span id="cert-date"></span> 발행</p>
+            </div>
+        </div>
+        <button class="action-btn" style="background: var(--gimpo-blue); margin-top: 20px;" onclick="location.reload()">첫 화면으로 돌아가기</button>
+    </div>
+</div>
+
+<script>
+    const DB_URL = "https://script.google.com/macros/s/AKfycbzfDaOp4rkneAMoaH_mRzwb6-5GSsHPVntUuF3brnjp-mruhO_KCsCRamo_PWejiFrc/exec";
+
+    let audioCtx, intervalId;
+    function initAudio() { if (audioCtx) return; audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+    function startBGM() {
+        if (intervalId) return;
+        const tempo = 124; const beatTime = 60/tempo;
+        const bassNotes = [55, 55, 82, 73]; let step = 0;
+        intervalId = setInterval(() => { playKick(); playBass(bassNotes[step % bassNotes.length]); if (step % 2 === 0) playClap(); step++; }, beatTime * 1000);
+    }
+    function playKick() { if(!audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type="sine"; osc.frequency.setValueAtTime(120, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime+0.15); gain.gain.setValueAtTime(0.2, audioCtx.currentTime); osc.connect(gain).connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+0.15); }
+    function playBass(freq) { if(!audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type="sawtooth"; osc.frequency.value=freq; gain.gain.setValueAtTime(0.04, audioCtx.currentTime); osc.connect(gain).connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+0.2); }
+    function playClap() { if(!audioCtx) return; const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate*0.05, audioCtx.sampleRate); const data = buffer.getChannelData(0); for(let i=0; i<data.length; i++) data[i] = (Math.random()*2-1)*Math.exp(-i / 200); const noise = audioCtx.createBufferSource(); noise.buffer = buffer; const gain = audioCtx.createGain(); gain.gain.value=0.08; noise.connect(gain).connect(audioCtx.destination); noise.start(); }
+
+    function logData(qIdx, isCorrect) {
+        if (!DB_URL || DB_URL.includes("여기에")) return;
+        fetch(DB_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify({
+                region: region,
+                score: score,
+                qIdx: qIdx,
+                isCorrect: isCorrect ? "정답" : "오답"
+            })
+        }).catch(e => console.error("데이터 전송 실패:", e));
+    }
+
+    const allData = [
+        { q: "입대위 공고 시, '기타 안건'으로만 공고하고 당일 세부 내용을 의결했다면?", correct: "안건명 미기재로 의결 무효", wrong: "전원찬성 의결 했다면 가능", strict: "세부 안건명을 명시하지 않으면 의결 효력이 없습니다!", ref: "법령: 안건의 구체적 명시 의무" },
+        { q: "입찰 공고에 '현장설명회 참가자만 투찰 가능' 명시 후, 불참 업체가 투찰했다면?", correct: "무효 처리", wrong: "낙찰 시 유효 인정", strict: "현장설명회 불참 시 투찰 자격이 없습니다!", ref: "사업자 선정지침 별표 3" },
+        { q: "제한경쟁입찰 시 실내 소독업체와 수목 소독 업체를 함께 선정할 수 있나?", correct: "각각 선정 해야", wrong: "함께 선정 가능", strict: "감염병예방법과 산림보호법에 따른 사업종류가 다르므로 각각 선정해야 합니다!", ref: "선정지침 별표 1" },
+        { q: "제한경쟁입찰에서 유효 투찰 업체가 2개인 경우 입찰의 효력은?", correct: "3개 업체 미만으로 유찰", wrong: "2개 업체 충족으로 성립", strict: "제한경쟁은 최소 3인 이상의 유효한 입찰이 필수입니다!", ref: "사업자 선정지침 제5조" },
+        { q: "수의계약 전 의결 시 반드시 포함해야 할 내용은?", correct: "계약상대자 및 중요조건", wrong: "수의계약 체결 여부", strict: "업체와 주요 조건을 특정하지 않은 의결은 무용지물입니다!", ref: "사업자 선정지침 제4조" },
+        { q: "낙찰 결과 K-apt 공개 기한은?", correct: "낙찰자 결정일의 다음 날 18:00까지", wrong: "계약서 공개 시 생략 가능", strict: "투명한 행정을 위해 다음 날 18시까지 공개해야 합니다!", ref: "사업자 선정지침 제11조" },
+        { q: "공사 계약 시 업체로부터 받아야 하는 계약보증금 비율은?", correct: "20% 이상", wrong: "10% 이상", strict: "리스크 방지를 위해 20% 이상의 보증이 필요합니다!", ref: "선정지침 제31조" },
+        { q: "상시 근무 용역 계약 시 4대 보험 가입증명서 징구 기한은?", correct: "계약체결 후 1개월 이내", wrong: "계약체결 후 10일 이내", strict: "4대 보험 가입증명서는 계약체결 후 1개월 이내에 받아야 합니다.", ref: "선정지침 제29조" },
+        { q: "장충금을 계획 조정 없이 보수에 사용했다면?", correct: "계획 조정 후 사용 필수", wrong: "긴급한 경우라면 가능", strict: "계획 없는 사용은 형사 처벌 사안입니다!", ref: "공동주택관리법 제29조" },
+        { q: "전자입찰 마감 시간이 17:00입니다. 17:00:59 등록분은?", correct: "무효", wrong: "정상 접수", strict: "서버 시간 17시 정각이 지나면 무효입니다!", ref: "표준 서버 시간 기준" },
+        { q: "잡수입의 취득 사업자 선정 시 낙찰 방법은?", correct: "최고가 투찰자 선정", wrong: "최저가 낙찰", strict: "수익 사업은 최고가를 선택해야 합니다!", ref: "선정지침 별표 7" },
+        { q: "최저낙찰제 공고 시 기업신용평가등급 확인서 제출을 요구할 수 있나?", correct: "없다", wrong: "있다", strict: "적격심사제 서류이므로 최저가 입찰 시 별도로 요청할 수 없습니다!", ref: "선정지침 제27조" },
+        { q: "장기수선계획 정기 검토 주기는?", correct: "3년", wrong: "5년", strict: "3년마다 정기 검토가 의무입니다!", ref: "법 제29조" },
+        { q: "적격심사 평가 시 위원 몇 명 이상 참여해야 하나요?", correct: "5인 이상", wrong: "3인 이상", strict: "심사의 정당성은 5인부터 시작됩니다!", ref: "사업자 선정지침 제13조" },
+        { q: "주택관리업자 재계약 시 입주자 동의 요건은?", correct: "전체 입주자등의 과반수 찬성", wrong: "1/10 동의", strict: "전체 입주자등의 과반수 동의는 필수입니다!", ref: "선정지침 제4조" },
+        { q: "계약 체결 후 홈페이지/게시판 공개 기한은?", correct: "1개월 이내", wrong: "3개월 내", strict: "1개월 이내 홈페이지 및 게시판 공개가 원칙입니다!", ref: "공동주택관리법 제28조" },
+        { q: "전기안전관리 공사의 계약주체는?", correct: "입주자대표회의", wrong: "관리주체", strict: "전기안전관리 계약의 당사자는 입주자대표회의 입니다!", ref: "선정지침 [별표7]" },
+        { q: "계약서 공개 장소는? (500세대 미만)", correct: "홈페이지, K-APT, 동별게시판", wrong: "홈페이지, K-APT", strict: "계약서 공개는 의무이며 게시판을 포함해야 합니다!", ref: "법 제26조" }
+    ];
+
+    const suddenEvents = [
+        { title: "⚠️ 돌발 상황 #1", desc: "\"전기차 화재가 발생했어요!\" 지하주차장 화재 발생 시 가장 먼저 해야 할 행동은?", correct: "119에 화재신고 접수한다.", wrong: "즉시 소화기로 진압한다." },
+        { title: "⚠️ 돌발 상황 #2", desc: "\"윗집 소음 때문에 너무 힘들어요!\" 층간소음 항의 시 관리주체의 올바른 행동은?", correct: "피해 내용을 충분히 듣고 확인 후 중재한다.", wrong: "직접 윗층에 찾아가 항의하도록 한다." }
+    ];
+
+    let currentIndex = 0; let score = 0; let region = ""; let currentAnsPos = 'a';
+    const humanFaces = ["👨", "👩", "👴", "👵", "🧑", "🧒", "🧔", "👱", "👩‍🦰", "👨‍🦱", "👩‍💼", "👨‍💼", "🧑‍🔬", "👩‍🎨", "👨‍🍳", "👩‍🏫", "👨‍💻", "👩‍⚕️", "👮", "👩‍🚒"];
+
+    function goPage(num) {
+        document.querySelectorAll('#game-box > div').forEach(div => div.classList.add('hidden'));
+        const target = document.getElementById('view-' + num);
+        if (target) target.classList.remove('hidden');
+    }
+
+    function startFlow() { initAudio(); goPage(2); }
+
+    function checkAndStart() {
+        region = document.getElementById('select-region').value;
+        if (!region) { alert("지역을 선택해주세요!"); return; }
+        startBGM(); goPage('game'); updateUI();
+    }
+
+    function updateUI() {
+        if(currentIndex === 6) { showSudden(0); return; }
+        if(currentIndex === 13) { showSudden(1); return; }
+        
+        const qIdx = (currentIndex >= 14) ? currentIndex - 2 : (currentIndex >= 7) ? currentIndex - 1 : currentIndex;
+        const q = allData[qIdx % allData.length];
+        document.getElementById('current-idx').innerText = currentIndex + 1;
+        document.getElementById('txt-question').innerText = q.q;
+        
+        if(Math.random() > 0.5) {
+            document.getElementById('btn-a').innerText = q.correct;
+            document.getElementById('btn-b').innerText = q.wrong;
+            currentAnsPos = 'a';
+        } else {
+            document.getElementById('btn-a').innerText = q.wrong;
+            document.getElementById('btn-b').innerText = q.correct;
+            currentAnsPos = 'b';
+        }
+        document.getElementById('area-question').classList.remove('hidden');
+        document.getElementById('area-feedback').classList.add('hidden');
+        document.getElementById('wrong-screen').classList.add('hidden');
+        if(currentIndex >= 10) document.body.classList.add('night-mode');
+    }
+
+    function checkAnswer(choice) {
+        const qIdx = (currentIndex >= 14) ? currentIndex - 2 : (currentIndex >= 7) ? currentIndex - 1 : currentIndex;
+        const q = allData[qIdx % allData.length];
+        const isCorrect = (choice === currentAnsPos);
+        
+        logData(currentIndex + 1, isCorrect);
+
+        document.getElementById('area-question').classList.add('hidden');
+        document.getElementById('area-feedback').classList.remove('hidden');
+
+        if (isCorrect) {
+            score += 5;
+            document.getElementById('audio-cheer').play();
+            const win = document.getElementById('win-' + currentIndex);
+            win.classList.add('neon-on');
+            win.innerHTML = `<span class="resident">${humanFaces[currentIndex % 20]}</span>`;
+            document.getElementById('correct-feedback-box').classList.remove('hidden');
+            document.getElementById('card-feedback').innerHTML = `<b style="color:var(--success); font-size:16px;">✅ 정답! 완벽한 실무 감각입니다.</b><br><br>${q.ref}`;
+        } else {
+            document.getElementById('audio-boo').play();
+            document.getElementById('correct-feedback-box').classList.add('hidden');
+            document.getElementById('wrong-screen').classList.remove('hidden');
+            document.getElementById('guide-correct-ans').innerText = "✅ 올바른 정답: " + q.correct;
+            document.getElementById('guide-legal-ref').innerText = "⚖️ 관련 법령: " + q.ref;
+        }
+    }
+
+    function showSudden(idx) {
+        const s = suddenEvents[idx];
+        document.getElementById('sudden-title').innerText = s.title;
+        document.getElementById('sudden-desc').innerText = s.desc;
+        if(Math.random() > 0.5) {
+            document.getElementById('sudden-btn-1').innerText = s.correct;
+            document.getElementById('sudden-btn-2').innerText = s.wrong;
+            currentAnsPos = 'a';
+        } else {
+            document.getElementById('sudden-btn-1').innerText = s.wrong;
+            document.getElementById('sudden-btn-2').innerText = s.correct;
+            currentAnsPos = 'b';
+        }
+        document.getElementById('sudden-event-screen').classList.remove('hidden');
+    }
+
+    function handleSudden(btnId) {
+        const isCorrect = (btnId === currentAnsPos);
+        document.getElementById('sudden-event-screen').classList.add('hidden');
+        if(isCorrect) { score += 5; document.getElementById('audio-cheer').play(); alert("현명한 판단입니다! (+5점)"); }
+        else { document.getElementById('audio-boo').play(); alert("대응 미숙으로 평판이 하락했습니다."); }
+        currentIndex++; updateUI();
+    }
+
+    function directNext() {
+        if (currentIndex < 19) { currentIndex++; updateUI(); }
+        else { showResult(); }
+    }
+
+    function showResult() {
+        if(intervalId) clearInterval(intervalId);
+        goPage('result');
+        document.getElementById('txt-score').innerText = score + "점";
+
+        const baseRanks = [
+            { name: "사우동", pts: 95 }, { name: "장기동", pts: 90 }, { name: "구래동", pts: 85 },
+            { name: "운양동", pts: 80 }, { name: "풍무동", pts: 75 }, { name: "북변동", pts: 70 },
+            { name: "마산동", pts: 65 }, { name: "감정동", pts: 60 }, { name: "양촌읍", pts: 55 },
+            { name: "고촌읍", pts: 50 }, { name: "통진읍", pts: 45 }
+        ];
+
+        let found = false;
+        baseRanks.forEach(r => { if(r.name === region) { r.pts = score; found = true; } });
+        if(!found) baseRanks.push({ name: region, pts: score });
+        baseRanks.sort((a, b) => b.pts - a.pts);
+
+        let rankHTML = "";
+        baseRanks.forEach((r, i) => {
+            const isMy = (r.name === region);
+            const style = isMy ? "color: var(--gimpo-blue); font-weight: 900; background: #fffde7; padding: 2px 8px; border-radius: 8px; display: inline-block; width: 100%;" : "";
+            rankHTML += `<div style="margin-bottom: 5px; ${style}">${i+1}위. ${r.name}: ${r.pts}점${isMy ? ' (MY)' : ''}</div>`;
+        });
+        document.getElementById('leaderboard').innerHTML = rankHTML;
+
+        // [수정 사항] 인증서 데이터 및 오늘 날짜 세팅
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        const date = today.getDate();
+        
+        document.getElementById('final-region').innerText = region;
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('cert-date').innerText = `${year}년 ${month}월 ${date}일`;
+
+        saveToGoogle();
+    }
+
+    function saveToGoogle() {
+        const scriptUrl = "발급받은_구글_웹앱_URL"; 
+        if(scriptUrl === "발급받은_구글_웹앱_URL") return;
+
+        fetch(scriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                region: region,
+                score: score
+            })
+        });
+    }
+</script>
+</body>
+</html>
